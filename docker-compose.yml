@@ -22,9 +22,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    # デフォルトでは単なるシェルを起動
-    command: bash
-    # dev環境では長時間稼働させる
+    # TensorBoardを実行しながらもコンテナを維持するために必要
     tty: true
     stdin_open: true
     # 推奨：TensorFlowのCUDAログレベル設定
