@@ -1,0 +1,30 @@
+{
+    "name": "Reversi AI Model Development",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "reversi-model",
+    "workspaceFolder": "/app",
+    "shutdownAction": "stopCompose",
+
+    // VS Codeの設定
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/bin/python3",
+                "python.linting.enabled": true,
+                "python.linting.pylintEnabled": true,
+                "editor.formatOnSave": true,
+                "python.formatting.provider": "autopep8",
+                "python.analysis.extraPaths": [
+                    "/app"
+                ]
+            }
+        }
+    },
+
+    // GPUの確認コマンド
+    "postCreateCommand": "nvidia-smi && python -c 'import tensorflow as tf; print(\"TensorFlow version:\", tf.__version__); print(\"GPU Available:\", len(tf.config.list_physical_devices(\"GPU\")) > 0); print(\"GPU Devices:\", tf.config.list_physical_devices(\"GPU\"))'"
+}
