@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Distribution / packaging
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# TensorFlow
+checkpoint
+*.ckpt
+*.ckpt.*
+*.pb
+*.pbtxt
+events.out.tfevents.*
+graph.pbtxt
+model.ckpt.*
+train_*.tfrecords
+validation_*.tfrecords
+*.data-*
+*.index
+*.meta
+saved_model/
+saved_model.pb
+
+# Model outputs
+output/
+export/model/
+export/model.json
+export/*.bin
+export/*.weights.bin
+export/weights*
+
+# Logs
+logs/
+*.log
+
+# Others
+.DS_Store
