@@ -4,6 +4,7 @@ import tensorflow as tf
 from tqdm import tqdm
 import random
 import argparse
+import shutil
 from datetime import datetime
 from collections import deque
 
@@ -35,6 +36,15 @@ class SelfPlayTrainer:
         self.log_dir = os.path.join(log_dir, timestamp)
         os.makedirs(self.log_dir, exist_ok=True)
         self.summary_writer = tf.summary.create_file_writer(self.log_dir)
+
+    @classmethod
+    def load_from_model(cls, model_path, buffer_size=10000, log_dir="./logs"):
+        """既存のモデルからトレーナーを初期化する"""
+        print(f"モデル {model_path} から学習を再開します")
+        # モデルをロード
+        model = ReversiModel(model_path)
+        # トレーナーを初期化
+        return cls(model=model, buffer_size=buffer_size, log_dir=log_dir)
 
     def _get_action_probs(self, board, player, valid_moves, temperature=1.0):
         """
@@ -225,6 +235,21 @@ class SelfPlayTrainer:
         os.makedirs(path, exist_ok=True)
         self.model.save(f"{path}/reversi_model")
 
+    def remove_interim_models(self, output_dir):
+        """中間モデルを削除する"""
+        # 削除する前に確認メッセージを表示
+        print("中間モデルを削除中...")
+
+        # ディレクトリ内の項目を確認
+        for item in os.listdir(output_dir):
+            item_path = os.path.join(output_dir, item)
+
+            # model_iter_X形式のディレクトリを探す
+            if os.path.isdir(item_path) and item.startswith("model_iter_"):
+                # ディレクトリを削除
+                shutil.rmtree(item_path)
+                print(f"- {item} を削除しました")
+
     def evaluate_model_strength(self, num_games=10, opponent_model=None, visualize=False):
         """モデルの強さを評価する（別のモデルと対戦する）"""
         wins = 0
@@ -357,6 +382,9 @@ def main():
     parser.add_argument('--log-dir', type=str, default='./logs', help='TensorBoardログの保存先ディレクトリ')
     parser.add_argument('--evaluate', action='store_true', help='学習後にモデルの強さを評価する')
     parser.add_argument('--visualize', action='store_true', help='評価中のボード状態を可視化する')
+    parser.add_argument('--save-interim', action='store_true', help='中間モデルを保存するかどうか（デフォルトは保存しない）')
+    parser.add_argument('--load-model', type=str, help='学習を再開する既存モデルのパス')
+    parser.add_argument('--start-iteration', type=int, default=0, help='学習を再開する場合の開始イテレーション番号')
 
     args = parser.parse_args()
 
@@ -365,12 +393,21 @@ def main():
     output_dir = os.path.join(args.output_dir, f"training_{timestamp}")
     os.makedirs(output_dir, exist_ok=True)
 
-    # トレーナーの初期化
-    trainer = SelfPlayTrainer(buffer_size=args.buffer_size, log_dir=args.log_dir)
+    # トレーナーの初期化（既存モデルがある場合はロード）
+    if args.load_model:
+        trainer = SelfPlayTrainer.load_from_model(
+            model_path=args.load_model,
+            buffer_size=args.buffer_size,
+            log_dir=args.log_dir
+        )
+        start_iteration = args.start_iteration
+    else:
+        trainer = SelfPlayTrainer(buffer_size=args.buffer_size, log_dir=args.log_dir)
+        start_iteration = 0
 
     # 学習ループ
-    for i in range(args.iterations):
-        print(f"\nイテレーション {i+1}/{args.iterations}")
+    for i in range(start_iteration, start_iteration + args.iterations):
+        print(f"\nイテレーション {i+1}/{start_iteration + args.iterations}")
 
         # 自己対戦でデータ生成
         trainer.generate_self_play_data(num_games=args.games, temperature=args.temperature)
@@ -380,11 +417,16 @@ def main():
 
         print(f"損失 - ポリシー: {losses['policy_loss']:.4f}, 価値: {losses['value_loss']:.4f}, 合計: {losses['total_loss']:.4f}")
 
-        # モデルを保存
-        trainer.save_model(path=os.path.join(output_dir, f"model_iter_{i+1}"))
+        # 中間モデルを保存するオプションが指定されている場合のみ中間モデルを保存
+        if args.save_interim:
+            trainer.save_model(path=os.path.join(output_dir, f"model_iter_{i+1}"))
 
     # 最終モデルを保存
     trainer.save_model(path=os.path.join(output_dir, "final_model"))
+
+    # もし中間モデルを保存していた場合は削除
+    if args.save_interim:
+        trainer.remove_interim_models(output_dir)
 
     # モデルの評価
     if args.evaluate:
@@ -393,7 +435,9 @@ def main():
         print(f"評価結果: 勝ち: {evaluation_results['wins']}回, 引き分け: {evaluation_results['draws']}回, " +
               f"負け: {evaluation_results['losses']}回, 勝率: {evaluation_results['win_rate']:.2%}")
 
-    print(f"\n学習が完了しました。モデルが {output_dir} に保存されました")
+    print(f"\n学習が完了しました。モデルが {output_dir}/final_model に保存されました")
+    if args.save_interim:
+        print("すべての中間モデルは削除されました")
     print(f"TensorBoardログは {trainer.log_dir} に保存されました")
     print(f"学習の進捗をTensorBoardで確認するには: tensorboard --logdir={args.log_dir}")
     print("その後、ブラウザで http://localhost:6006 を開いてください")
