@@ -1,20 +1,13 @@
-version: '3.8'
-
 services:
-  reversi-model:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: reversi-model:latest
+  app:
+    build: .
     container_name: reversi-model
     volumes:
       - ./:/app
-      # 訓練データの永続化
       - ./output:/app/output
       - ./logs:/app/logs
     ports:
-      - "6006:6006"  # TensorBoard用
-    # GPU設定
+      - "6006:6006"
     deploy:
       resources:
         reservations:
@@ -22,9 +15,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    # TensorBoardを実行しながらもコンテナを維持するために必要
     tty: true
     stdin_open: true
-    # 推奨：TensorFlowのCUDAログレベル設定
     environment:
-      - TF_CPP_MIN_LOG_LEVEL=1  # INFO + Warning のみ表示
+      - TF_CPP_MIN_LOG_LEVEL=1

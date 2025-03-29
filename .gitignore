@@ -67,11 +67,7 @@ saved_model.pb
 
 # Model outputs
 output/
-export/model/
-export/model.json
-export/*.bin
-export/*.weights.bin
-export/weights*
+export/
 
 # Logs
 logs/

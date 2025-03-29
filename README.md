@@ -94,13 +94,12 @@ tensorboard --logdir=./logs
 学習したモデルをTensorFlow.js形式にエクスポートします：
 
 ```bash
-python export_tfjs.py --model-path ./output/final_model/reversi_model --output-path ./export --create-demo
+python export_tfjs.py --model-path ./output/final_model/reversi_model --output-path ./export
 ```
 
 オプション：
 - `--model-path`: エクスポートする学習済みモデルのパス
 - `--output-path`: エクスポート先ディレクトリ
-- `--create-demo`: 推論デモ用HTMLファイルを作成するフラグ
 
 ## モデル仕様
 

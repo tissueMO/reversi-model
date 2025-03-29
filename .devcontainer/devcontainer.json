@@ -1,11 +1,8 @@
 {
-    "name": "Reversi AI Model Development",
+    "name": "Reversi-AI Development",
     "dockerComposeFile": "../docker-compose.yml",
-    "service": "reversi-model",
+    "service": "app",
     "workspaceFolder": "/app",
-    "shutdownAction": "stopCompose",
-
-    // VS Codeの設定
     "customizations": {
         "vscode": {
             "extensions": [
@@ -24,7 +21,5 @@
             }
         }
     },
-
-    // GPU確認用のコマンド
-    "postCreateCommand": "nvidia-smi && python -c 'import tensorflow as tf; print(\"TensorFlow version:\", tf.__version__); print(\"GPU Available:\", len(tf.config.list_physical_devices(\"GPU\")) > 0); print(\"GPU Devices:\", tf.config.list_physical_devices(\"GPU\"))'"
+    "postCreateCommand": "bash ./.devcontainer/postCreateCommand.sh"
 }

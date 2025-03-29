@@ -27,14 +27,23 @@ def export_to_tfjs(model_path, output_path):
 
     print(f"モデルのエクスポートに成功しました: {output_path}")
 
+    # TensorShape を Python のリストに変換する関数
+    def shape_to_list(shape):
+        if shape is None:
+            return None
+        return [dim if dim is not None else -1 for dim in shape]
+
     # モデルのメタデータを作成
+    input_shape = shape_to_list(model.input_shape[1:]) if model.input_shape else None
+    output_shapes = [shape_to_list(o.shape[1:]) for o in model.outputs] if model.outputs else []
+
     metadata = {
         "format": "layers-model",
         "generatedBy": "TensorFlow.js Converter",
         "convertedBy": "tensorflowjs_converter",
         "modelTopology": {
-            "input_shape": model.input_shape[1:],
-            "output_shape": [o.shape[1:] for o in model.outputs]
+            "input_shape": input_shape,
+            "output_shape": output_shapes
         }
     }
 
