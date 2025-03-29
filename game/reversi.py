@@ -40,13 +40,14 @@ class ReversiEnv:
             return False
 
         # 8方向のいずれかで相手の石を挟めるかチェック
+        opponent = 3 - player
         for dr, dc in self.directions:
             r, c = row + dr, col + dc
             # 挟める石があるかのフラグ
             has_opponent_between = False
 
             # 盤面の範囲内で相手の石が続く限りループ
-            while 0 <= r < 8 and 0 <= c < 8 and self.board[r, c] == 3 - player:
+            while 0 <= r < 8 and 0 <= c < 8 and self.board[r, c] == opponent:
                 r += dr
                 c += dc
                 has_opponent_between = True
@@ -76,11 +77,45 @@ class ReversiEnv:
             - ゲーム終了フラグ
             - 追加情報
         """
+        # 有効な手があるか確認
+        valid_moves = self.get_valid_moves(self.current_player)
+
+        # 有効な手がない場合はパス
+        if not valid_moves:
+            self.current_player = 3 - self.current_player
+            valid_moves_next = self.get_valid_moves(self.current_player)
+
+            # 次のプレイヤーも有効な手がない場合はゲーム終了
+            if not valid_moves_next:
+                self.done = True
+
+                # 勝敗を判定
+                p1_stones = np.sum(self.board == 1)
+                p2_stones = np.sum(self.board == 2)
+
+                reward = 0.0  # デフォルトは引き分け
+
+                if p1_stones > p2_stones:
+                    reward = 1.0 if self.current_player == 1 else -1.0
+                elif p2_stones > p1_stones:
+                    reward = 1.0 if self.current_player == 2 else -1.0
+
+                info = {
+                    "player1_stones": p1_stones,
+                    "player2_stones": p2_stones,
+                    "winner": 1 if p1_stones > p2_stones else (2 if p2_stones > p1_stones else 0)
+                }
+
+                return self.board.copy(), reward, self.done, info
+
+            # パスして次のプレイヤーに手番を渡す
+            return self.board.copy(), 0.0, self.done, {"passed": True}
+
+        # 指定された手が有効でなければ、現在の状態を返す
         if not self.is_valid_move(row, col, self.current_player):
-            # 無効な手の場合、現在の状態を返す（実際の実装ではエラー処理が必要）
             return self.board.copy(), 0.0, self.done, {}
 
-        # 石を置く
+        # 有効な手なので石を置く
         self.board[row, col] = self.current_player
 
         # 8方向をチェックして石をひっくり返す
@@ -91,16 +126,14 @@ class ReversiEnv:
         self.current_player = 3 - self.current_player
 
         # 次のプレイヤーに有効な手があるかチェック
-        valid_moves = self.get_valid_moves(self.current_player)
+        next_valid_moves = self.get_valid_moves(self.current_player)
 
-        # 有効な手がない場合
-        if not valid_moves:
-            # 相手（元のプレイヤー）に戻して、そのプレイヤーに有効な手があるかチェック
+        # 次のプレイヤーに有効な手がない場合
+        if not next_valid_moves:
+            # 元のプレイヤーに戻す
             self.current_player = 3 - self.current_player
-            valid_moves = self.get_valid_moves(self.current_player)
-
-            # 両プレイヤーとも有効な手がない場合、ゲーム終了
-            if not valid_moves:
+            # 元のプレイヤーにも有効な手がなければゲーム終了
+            if not self.get_valid_moves(self.current_player):
                 self.done = True
 
                 # 勝敗を判定
@@ -185,10 +218,14 @@ class ReversiEnv:
 
         # 一時的な環境を作成して手を適用
         temp_env = ReversiEnv()
-        temp_env.board = new_board
+        temp_env.board = new_board.copy()
         temp_env.current_player = player
 
         # 手を適用
-        temp_env.make_move(row, col)
+        temp_env.board[row, col] = player
+
+        # 石をひっくり返す
+        for dr, dc in temp_env.directions:
+            temp_env._flip_stones(row, col, dr, dc)
 
         return temp_env.board
