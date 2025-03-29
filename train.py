@@ -270,6 +270,10 @@ class SelfPlayTrainer:
             # ボードの状態を追跡
             game_states = []
 
+            # 手番を記録する配列を追加
+            move_history = np.zeros((8, 8), dtype=np.int32)
+            move_count = 0
+
             while not self.env.done:
                 player = self.env.current_player
                 board = self.env.board.copy()
@@ -304,6 +308,10 @@ class SelfPlayTrainer:
                         action_idx = np.argmax(action_probs)
                         row, col = valid_indices[action_idx]
 
+                # 手番をカウントアップして記録
+                move_count += 1
+                move_history[row, col] = move_count
+
                 # 選択した手を実行
                 self.env.make_move(row, col)
 
@@ -327,8 +335,8 @@ class SelfPlayTrainer:
 
                 # ボード状態の可視化（最終盤面）
                 if visualize and len(game_states) > 0:
-                    # 最終盤面の可視化（画像として）
-                    final_board = self._visualize_board(self.env.board)
+                    # 最終盤面の可視化（画像として）- 手番の順序を含める
+                    final_board = self._visualize_board(self.env.board, move_history)
                     tf.summary.image(f"game_{game_idx}/final_board", final_board, step=game_idx)
 
         win_rate = wins / num_games
@@ -348,26 +356,130 @@ class SelfPlayTrainer:
             'win_rate': win_rate
         }
 
-    def _visualize_board(self, board):
-        """ボードを可視化し、画像として返す"""
+    def _visualize_board(self, board, move_history=None):
+        """
+        ボードを可視化し、画像として返す
+
+        Args:
+            board: 盤面情報（0=空きマス, 1=プレイヤー1の石, 2=プレイヤー2の石）
+            move_history: 各マスが何手目に打たれたかの情報（任意）
+        """
+        # 拡大倍率を定義
+        scale = 16  # より大きくして数字を表示しやすくする
+
         # 8x8の盤面を3チャンネルのRGB画像に変換
-        vis_board = np.zeros((8, 8, 3), dtype=np.uint8)
+        vis_board = np.zeros((8 * scale, 8 * scale, 3), dtype=np.uint8)
 
-        # 背景色（緑）
-        vis_board[:, :] = [0, 100, 0]
+        # マス目の線を描画
+        for i in range(9):
+            # 縦線
+            vis_board[:, i * scale - 1 if i > 0 else 0: i * scale + 1 if i < 8 else -1, :] = [50, 50, 50]
+            # 横線
+            vis_board[i * scale - 1 if i > 0 else 0: i * scale + 1 if i < 8 else -1, :, :] = [50, 50, 50]
 
-        # プレイヤー1の石（黒）
-        vis_board[board == 1] = [0, 0, 0]
+        # 各マスの背景を緑色に
+        for row in range(8):
+            for col in range(8):
+                r_start, r_end = row * scale + 1, (row + 1) * scale - 1
+                c_start, c_end = col * scale + 1, (col + 1) * scale - 1
+                vis_board[r_start:r_end, c_start:c_end] = [0, 100, 0]
 
-        # プレイヤー2の石（白）
-        vis_board[board == 2] = [255, 255, 255]
+        # 石を描画
+        for row in range(8):
+            for col in range(8):
+                r_center, c_center = row * scale + scale//2, col * scale + scale//2
+                radius = scale//2 - 2
 
-        # 1ピクセル = 1セルではわかりにくいので、拡大する
-        scale = 10
-        large_board = np.kron(vis_board, np.ones((scale, scale, 1), dtype=np.uint8))
+                if board[row, col] == 1:  # プレイヤー1の石（黒）
+                    self._draw_circle(vis_board, r_center, c_center, radius, [0, 0, 0])
+                elif board[row, col] == 2:  # プレイヤー2の石（白）
+                    self._draw_circle(vis_board, r_center, c_center, radius, [255, 255, 255])
+
+        # 手番の順序を数字で表示
+        if move_history is not None:
+            for row in range(8):
+                for col in range(8):
+                    move_number = move_history[row, col]
+                    if move_number > 0:
+                        r_center, c_center = row * scale + scale//2, col * scale + scale//2
+                        # 数字の表示位置を調整
+                        if board[row, col] == 1:  # 黒石上の数字は白色
+                            color = [255, 255, 255]
+                        elif board[row, col] == 2:  # 白石上の数字は黒色
+                            color = [0, 0, 0]
+                        else:  # ありえないはずだが念のため
+                            continue
+
+                        # 数字のサイズは石のサイズの半分程度
+                        size = max(1, scale // 5)
+                        self._draw_number(vis_board, r_center, c_center, move_number, color, size)
 
         # バッチ次元を追加（TensorBoardのimage summaryのため）
-        return np.expand_dims(large_board, axis=0)
+        return np.expand_dims(vis_board, axis=0)
+
+    def _draw_circle(self, image, center_r, center_c, radius, color):
+        """
+        イメージ上に円を描く簡易関数
+        """
+        rows, cols = image.shape[:2]
+
+        # 円の範囲内のピクセルを設定
+        for r in range(max(0, center_r - radius), min(rows, center_r + radius + 1)):
+            for c in range(max(0, center_c - radius), min(cols, center_c + radius + 1)):
+                # 中心からの距離を計算
+                if ((r - center_r) ** 2 + (c - center_c) ** 2) <= radius ** 2:
+                    image[r, c] = color
+
+    def _draw_number(self, image, center_r, center_c, number, color, size):
+        """
+        イメージ上に数字を描く簡易関数
+
+        非常に単純化した数字の描画です。実際のプロジェクトでは
+        OpenCVやPILなどのライブラリを使った方が良いでしょう。
+        """
+        # 数字を文字列に変換
+        num_str = str(number)
+
+        # 中心から少しずらして数字を描画（複数桁の場合も考慮）
+        offset = len(num_str) * size // 4
+
+        for i, digit in enumerate(num_str):
+            # 数字の位置を調整（複数桁の場合は横に並べる）
+            digit_center_c = center_c - offset + i * size
+
+            # 非常に単純化した数字の描画
+            # 実際のプロジェクトでは適切なフォントレンダリングを使用するべき
+            if digit == '1':
+                # 数字の「1」を描画
+                for r in range(center_r - size, center_r + size + 1):
+                    if 0 <= r < image.shape[0] and 0 <= digit_center_c < image.shape[1]:
+                        image[r, digit_center_c] = color
+            elif digit == '2':
+                # 数字の「2」を簡易的に描画
+                for c in range(digit_center_c - size//2, digit_center_c + size//2 + 1):
+                    if 0 <= center_r - size < image.shape[0] and 0 <= c < image.shape[1]:
+                        image[center_r - size, c] = color  # 上部
+                    if 0 <= center_r < image.shape[0] and 0 <= c < image.shape[1]:
+                        image[center_r, c] = color          # 中央
+                    if 0 <= center_r + size < image.shape[0] and 0 <= c < image.shape[1]:
+                        image[center_r + size, c] = color   # 下部
+
+                for r in range(center_r - size, center_r + 1):
+                    if 0 <= r < image.shape[0] and 0 <= digit_center_c + size//2 < image.shape[1]:
+                        image[r, digit_center_c + size//2] = color  # 右上
+
+                for r in range(center_r, center_r + size + 1):
+                    if 0 <= r < image.shape[0] and 0 <= digit_center_c - size//2 < image.shape[1]:
+                        image[r, digit_center_c - size//2] = color  # 左下
+            else:
+                # その他の数字は単純に十字型で表現
+                for r in range(center_r - size//2, center_r + size//2 + 1):
+                    if 0 <= r < image.shape[0] and 0 <= digit_center_c < image.shape[1]:
+                        image[r, digit_center_c] = color  # 縦線
+
+                for c in range(digit_center_c - size//2, digit_center_c + size//2 + 1):
+                    if 0 <= center_r < image.shape[0] and 0 <= c < image.shape[1]:
+                        image[center_r, c] = color  # 横線
 
 
 def main():
