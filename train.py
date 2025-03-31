@@ -79,9 +79,22 @@ class SelfPlayTrainer:
             action_probs = np.zeros(len(valid_probs))
             action_probs[best_idx] = 1.0
         else:
+            # 負の値や極端に小さい値を防ぐためにクリップ
+            valid_probs = np.array(valid_probs)
+            valid_probs = np.clip(valid_probs, 1e-10, None)  # 小さな正の値でクリップ
+
             # Boltzmann分布でスケーリング
-            valid_probs = np.array(valid_probs) ** (1 / temperature)
-            action_probs = valid_probs / np.sum(valid_probs)
+            valid_probs = valid_probs ** (1 / temperature)
+
+            # NaNや無限大をチェックして置き換え
+            valid_probs = np.nan_to_num(valid_probs, nan=1e-10, posinf=1.0, neginf=1e-10)
+
+            # 合計が0になるのを防ぐ
+            if np.sum(valid_probs) <= 0:
+                # すべての手に均等な確率を割り当て
+                action_probs = np.ones(len(valid_probs)) / len(valid_probs)
+            else:
+                action_probs = valid_probs / np.sum(valid_probs)
 
         return action_probs, valid_indices
 
