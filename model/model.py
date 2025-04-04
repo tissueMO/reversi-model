@@ -1,6 +1,6 @@
+from typing import Tuple, List, Dict, Optional
 import tensorflow as tf
 import numpy as np
-from typing import Tuple, List, Dict, Optional
 
 
 class ReversiModel:
@@ -19,11 +19,14 @@ class ReversiModel:
         input_layer = tf.keras.layers.Input(shape=(8, 8, 3))
 
         # 畳み込み層
-        x = tf.keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu')(input_layer)
+        x = tf.keras.layers.Conv2D(
+            64, (3, 3), padding='same', activation='relu')(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu')(x)
+        x = tf.keras.layers.Conv2D(
+            64, (3, 3), padding='same', activation='relu')(x)
         x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Conv2D(128, (3, 3), padding='same', activation='relu')(x)
+        x = tf.keras.layers.Conv2D(
+            128, (3, 3), padding='same', activation='relu')(x)
         x = tf.keras.layers.BatchNormalization()(x)
 
         # 特徴抽出
@@ -34,14 +37,17 @@ class ReversiModel:
 
         # 政策ヘッド（次の手の確率分布）- 64マス + パス
         policy_head = tf.keras.layers.Dense(128, activation='relu')(features)
-        policy_head = tf.keras.layers.Dense(65, activation='softmax', name='policy')(policy_head)
+        policy_head = tf.keras.layers.Dense(
+            65, activation='softmax', name='policy')(policy_head)
 
         # 価値ヘッド（勝率予測）
         value_head = tf.keras.layers.Dense(128, activation='relu')(features)
-        value_head = tf.keras.layers.Dense(1, activation='tanh', name='value')(value_head)
+        value_head = tf.keras.layers.Dense(
+            1, activation='tanh', name='value')(value_head)
 
         # モデルの構築
-        model = tf.keras.Model(inputs=input_layer, outputs=[policy_head, value_head])
+        model = tf.keras.Model(inputs=input_layer, outputs=[
+                               policy_head, value_head])
 
         # コンパイル
         model.compile(
@@ -99,10 +105,16 @@ class ReversiModel:
 
         # 政策（行動確率）を取得
         policy = policy_pred[0]
+        value = value_pred[0][0]
+
+        # 予測後に不要な大きなテンソルを明示的に解放
+        del input_data
+        del policy_pred
+        del value_pred
 
         # 有効な手がない場合はパスを返す
         if not valid_moves:
-            return None, (value_pred[0][0] + 1) / 2  # tanhの出力を0~1に変換
+            return None, (value + 1) / 2  # tanhの出力を0~1に変換
 
         # 有効な手の確率だけを抽出
         valid_moves_prob = {}
@@ -114,6 +126,6 @@ class ReversiModel:
         best_move = max(valid_moves_prob.items(), key=lambda x: x[1])[0]
 
         # 勝率を0~1の範囲に変換（tanhの出力は-1~1）
-        win_rate = (value_pred[0][0] + 1) / 2
+        win_rate = (value + 1) / 2
 
         return {"row": best_move[0], "col": best_move[1]}, win_rate

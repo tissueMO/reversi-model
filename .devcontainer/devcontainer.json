@@ -6,18 +6,28 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                "github.copilot",
+                "github.copilot-chat",
+                "EditorConfig.EditorConfig",
                 "ms-python.python",
-                "ms-python.vscode-pylance"
+                "ms-python.vscode-pylance",
+                "ms-python.autopep8",
+                "mhutchie.git-graph"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/bin/python3",
                 "python.linting.enabled": true,
                 "python.linting.pylintEnabled": true,
                 "editor.formatOnSave": true,
-                "python.formatting.provider": "autopep8",
+                "editor.defaultformatter": "ms-python.autopep8",
+                "python.formatting.provider": "ms-python.autopep8",
                 "python.analysis.extraPaths": [
-                    "/app"
+                    "/app",
+                    "/usr/local/lib/python3.8/dist-packages",
+                    "/usr/lib/python3/dist-packages"
                 ],
+                "python.analysis.diagnosticMode": "workspace",
+                "python.analysis.typeCheckingMode": "basic",
                 "python.testing.unittestArgs": [
                   "-v",
                   "-s",

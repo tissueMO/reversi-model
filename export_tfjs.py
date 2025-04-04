@@ -3,6 +3,7 @@ import argparse
 import tensorflowjs as tfjs
 import tensorflow as tf
 
+
 def export_to_tfjs(model_path, output_path):
     """
     学習済みのTensorFlowモデルをTensorFlow.js形式にエクスポートする
@@ -34,8 +35,10 @@ def export_to_tfjs(model_path, output_path):
         return [dim if dim is not None else -1 for dim in shape]
 
     # モデルのメタデータを作成
-    input_shape = shape_to_list(model.input_shape[1:]) if model.input_shape else None
-    output_shapes = [shape_to_list(o.shape[1:]) for o in model.outputs] if model.outputs else []
+    input_shape = shape_to_list(
+        model.input_shape[1:]) if model.input_shape else None
+    output_shapes = [shape_to_list(o.shape[1:])
+                     for o in model.outputs] if model.outputs else []
 
     metadata = {
         "format": "layers-model",
@@ -57,9 +60,12 @@ def export_to_tfjs(model_path, output_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='TensorFlowモデルをTensorFlow.js形式にエクスポートします')
-    parser.add_argument('--model-path', type=str, required=True, help='TensorFlowモデルのパス')
-    parser.add_argument('--output-path', type=str, default='./export', help='TensorFlow.jsモデルの出力ディレクトリ')
+    parser = argparse.ArgumentParser(
+        description='TensorFlowモデルをTensorFlow.js形式にエクスポートします')
+    parser.add_argument('--model-path', type=str,
+                        required=True, help='TensorFlowモデルのパス')
+    parser.add_argument('--output-path', type=str,
+                        default='./export', help='TensorFlow.jsモデルの出力ディレクトリ')
 
     args = parser.parse_args()
 

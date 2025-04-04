@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Tuple, List, Dict, Optional, Union
 
+
 class ReversiEnv:
     """リバーシゲームの環境クラス"""
 

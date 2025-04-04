@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 from game.reversi import ReversiEnv
 
+
 class TestReversiEnv(unittest.TestCase):
     def setUp(self):
         """各テストの前に実行される前処理"""
@@ -104,6 +105,7 @@ class TestReversiEnv(unittest.TestCase):
         self.assertEqual(self.env.board[2, 3], 1)
         self.assertEqual(self.env.board[2, 4], 1)
         self.assertEqual(self.env.board[2, 5], 1)
+
 
 if __name__ == "__main__":
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
