@@ -4,7 +4,7 @@ import tensorflowjs as tfjs
 import tensorflow as tf
 
 
-def export_to_tfjs(model_path, output_path):
+def export(model_path, output_path):
     """
     学習済みのTensorFlowモデルをTensorFlow.js形式にエクスポートする
 
@@ -70,7 +70,7 @@ def main():
     args = parser.parse_args()
 
     # TensorFlow.js形式にエクスポート
-    export_to_tfjs(args.model_path, args.output_path)
+    export(args.model_path, args.output_path)
 
 
 if __name__ == "__main__":

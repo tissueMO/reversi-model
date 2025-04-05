@@ -31,7 +31,7 @@
 │   │   ├── __init__.py
 │   │   └── model.py    # ニューラルネットワークモデルの構造
 │   ├── train.py        # モデル学習スクリプト
-│   └── export_tfjs.py  # TensorFlow.js形式へのエクスポート
+│   └── export.py       # TensorFlow.js形式へのエクスポート
 ├── tests/              # テストコード
 │   ├── __init__.py
 │   └── test_reversi.py # リバーシロジックのテスト
@@ -100,7 +100,7 @@ tensorboard --logdir=./logs
 ### モデルのエクスポート
 
 ```bash
-python src/export_tfjs.py --model-path ./output/models/<training_timestamp>/final_model/reversi_model --output-path ./output/export
+python src/export.py --model-path ./output/models/<training_timestamp>/final_model/reversi_model --output-path ./output/export
 ```
 
 オプション：
