@@ -30,6 +30,13 @@
 │   ├── model/          # AIモデル定義
 │   │   ├── __init__.py
 │   │   └── model.py    # ニューラルネットワークモデルの構造
+│   ├── trainer/        # トレーニング関連モジュール
+│   │   ├── __init__.py         # メインのReversiTrainerクラス
+│   │   ├── base_trainer.py     # 基本トレーナー機能
+│   │   ├── training.py         # モデル学習機能
+│   │   ├── self_play.py        # 自己対戦による学習データ生成
+│   │   ├── evaluation.py       # モデル評価機能
+│   │   └── visualization.py    # 盤面可視化機能
 │   ├── train.py        # モデル学習スクリプト
 │   └── export.py       # TensorFlow.js形式へのエクスポート
 ├── tests/              # テストコード
