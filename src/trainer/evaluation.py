@@ -13,14 +13,103 @@ class EvaluationManager(SelfPlayManager):
         """可視化マネージャーを使用してボードを可視化する"""
         return VisualizationManager.visualize_board(board, move_history)
 
+    def _get_position_weights(self):
+        """盤面の各位置の重み付けを定義する"""
+        # 8x8の盤面における各位置の重み
+        weights = np.array([
+            [100, -20, 10, 5, 5, 10, -20, 100],
+            [-20, -30, 1, 1, 1, 1, -30, -20],
+            [10, 1, 5, 2, 2, 5, 1, 10],
+            [5, 1, 2, 1, 1, 2, 1, 5],
+            [5, 1, 2, 1, 1, 2, 1, 5],
+            [10, 1, 5, 2, 2, 5, 1, 10],
+            [-20, -30, 1, 1, 1, 1, -30, -20],
+            [100, -20, 10, 5, 5, 10, -20, 100]
+        ])
+        return weights
+
+    def _evaluate_board(self, board, player):
+        """盤面の評価値を計算する
+
+        Args:
+            board: 現在の盤面
+            player: 評価するプレイヤー
+
+        Returns:
+            評価値（高いほど有利）
+        """
+        opponent = 3 - player
+        weights = self._get_position_weights()
+
+        # 残りのマス数を計算（空きマスの数）
+        empty_count = np.sum(board == 0)
+
+        # 終盤（残り16マス以下）かどうか
+        is_endgame = empty_count <= 16
+
+        if is_endgame:
+            # 終盤では単純に石数の差を最大化
+            player_count = np.sum(board == player)
+            opponent_count = np.sum(board == opponent)
+            return player_count - opponent_count
+
+        # 位置による重み付けスコア
+        position_score = 0
+        for i in range(8):
+            for j in range(8):
+                if board[i, j] == player:
+                    position_score += weights[i, j]
+                elif board[i, j] == opponent:
+                    position_score -= weights[i, j]
+
+        # 相手の有効手の数を計算（少ないほど良い）
+        valid_moves_opponent = self.env.get_valid_moves(opponent)
+        mobility_score = -len(valid_moves_opponent) * 2  # 移動度に対する重み付け
+
+        # 自分の有効手の数も加味
+        valid_moves_player = self.env.get_valid_moves(player)
+        mobility_score += len(valid_moves_player)
+
+        # 総合評価
+        total_score = position_score + mobility_score
+
+        return total_score
+
+    def _select_best_move(self, board, player, valid_moves):
+        """最も評価値の高い手を選択する"""
+        best_score = float('-inf')
+        best_move_idx = 0
+
+        # 盤面の一時的なコピーを作成
+        temp_env = self.env.__class__()
+
+        for i, (row, col) in enumerate(valid_moves):
+            # 一時的な盤面を現在の状態にリセット
+            temp_env.board = board.copy()
+            temp_env.current_player = player
+
+            # 手を打ってみる
+            temp_env.make_move(row, col)
+
+            # 盤面を評価
+            score = self._evaluate_board(temp_env.board, player)
+
+            # より良いスコアが見つかれば更新
+            if score > best_score:
+                best_score = score
+                best_move_idx = i
+
+        # 最良の手のインデックスを返す
+        return best_move_idx
+
     def evaluate_model_strength(self, num_games=10, opponent_model=None, visualize=False):
         """モデルの強さを評価する（別のモデルと対戦する）"""
         wins = 0
         draws = 0
         losses = 0
 
-        # 対戦相手がない場合は、ランダムに手を選択するプレイヤーとして扱う
-        is_random_opponent = opponent_model is None
+        # 対戦相手がない場合は、ロジックベースのAIを使用
+        is_logic_based_opponent = opponent_model is None
 
         for game_idx in tqdm(range(num_games), desc="評価対局"):
             # ゲームをリセット
@@ -62,9 +151,9 @@ class EvaluationManager(SelfPlayManager):
                     row, col = valid_indices[action_idx]
                 else:
                     # 対戦相手の行動選択
-                    if is_random_opponent:
-                        # ランダムに選択
-                        move_idx = np.random.choice(len(valid_moves))
+                    if is_logic_based_opponent:
+                        # ロジックベースのAIによる選択
+                        move_idx = self._select_best_move(board, player, valid_moves)
                         row, col = valid_moves[move_idx]
                     else:
                         # 対戦相手のモデルを使用
