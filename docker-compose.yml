@@ -5,7 +5,6 @@ services:
     volumes:
       - ./:/app
       - ./output:/app/output
-      - ./logs:/app/logs
     ports:
       - "6006:6006"
     deploy:

@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 6006
 
-CMD ["tensorboard", "--logdir=logs", "--host=0.0.0.0", "--port=6006"]
+CMD ["tensorboard", "--logdir=output/logs", "--host=0.0.0.0", "--port=6006"]

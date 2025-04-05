@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from game.reversi import ReversiEnv
+from src.game.reversi import ReversiEnv
 
 
 class TestReversiEnv(unittest.TestCase):

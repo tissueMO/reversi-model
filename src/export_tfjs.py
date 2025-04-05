@@ -65,7 +65,7 @@ def main():
     parser.add_argument('--model-path', type=str,
                         required=True, help='TensorFlowモデルのパス')
     parser.add_argument('--output-path', type=str,
-                        default='./export', help='TensorFlow.jsモデルの出力ディレクトリ')
+                        default='./output/export', help='TensorFlow.jsモデルの出力ディレクトリ')
 
     args = parser.parse_args()
 

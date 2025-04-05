@@ -9,14 +9,14 @@ from collections import deque
 import gc
 import psutil
 
-from game import ReversiEnv
-from model import ReversiModel
+from src.game import ReversiEnv
+from src.model import ReversiModel
 
 
 class SelfPlayTrainer:
     """自己対戦による強化学習のトレーナークラス"""
 
-    def __init__(self, model=None, buffer_size=10000, log_dir="./logs"):
+    def __init__(self, model=None, buffer_size=10000, log_dir="./output/logs"):
         """トレーナーを初期化する"""
         self.model = model if model else ReversiModel()
         self.env = ReversiEnv()
@@ -73,7 +73,7 @@ class SelfPlayTrainer:
         gc.collect()
 
     @classmethod
-    def load_from_model(cls, model_path, buffer_size=10000, log_dir="./logs"):
+    def load_from_model(cls, model_path, buffer_size=10000, log_dir="./output/logs"):
         """既存のモデルからトレーナーを初期化する"""
         print(f"モデル {model_path} から学習を再開します")
         # モデルをロード
@@ -638,9 +638,9 @@ def main():
     parser.add_argument('--buffer-size', type=int,
                         default=10000, help='リプレイバッファのサイズ')
     parser.add_argument('--output-dir', type=str,
-                        default='./output', help='モデルの保存先ディレクトリ')
+                        default='./output/models', help='モデルの保存先ディレクトリ')
     parser.add_argument('--log-dir', type=str,
-                        default='./logs', help='TensorBoardログの保存先ディレクトリ')
+                        default='./output/logs', help='TensorBoardログの保存先ディレクトリ')
     parser.add_argument('--evaluate', action='store_true',
                         help='学習後にモデルの強さを評価する')
     parser.add_argument('--visualize', action='store_true',

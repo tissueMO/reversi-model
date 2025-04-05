@@ -22,18 +22,26 @@
 ## プロジェクト構成
 
 ```
-reversi-model/
-├── game/               # リバーシゲームロジック
+/app/
+├── src/                # ソースコード
+│   ├── game/           # リバーシゲームロジック
+│   │   ├── __init__.py
+│   │   └── reversi.py  # リバーシのルールとゲーム管理
+│   ├── model/          # AIモデル定義
+│   │   ├── __init__.py
+│   │   └── model.py    # ニューラルネットワークモデルの構造
+│   ├── train.py        # モデル学習スクリプト
+│   └── export_tfjs.py  # TensorFlow.js形式へのエクスポート
+├── tests/              # テストコード
 │   ├── __init__.py
-│   └── reversi.py      # リバーシのルールとゲーム管理
-├── model/              # AIモデル定義
-│   ├── __init__.py
-│   └── model.py        # ニューラルネットワークモデルの構造
-├── export/             # エクスポートされたモデルの保存先
-├── logs/               # TensorBoardログの保存先
+│   └── test_reversi.py # リバーシロジックのテスト
+├── output/             # 出力ファイル
+│   ├── models/         # 保存されたモデル
+│   ├── logs/           # TensorBoardログ
+│   └── export/         # エクスポートされたTensorFlow.jsモデル
 ├── requirements.txt    # 依存ライブラリ
-├── train.py            # モデル学習スクリプト
-└── export_tfjs.py      # TensorFlow.js形式へのエクスポート
+├── Dockerfile          # Dockerビルド設定
+└── docker-compose.yml  # Docker Compose設定
 ```
 
 ## インストール方法
@@ -49,7 +57,7 @@ pip install -r requirements.txt
 ### モデルの学習
 
 ```bash
-python train.py --games 100 --iterations 10 --epochs 10 --batch-size 128 --temperature 1.0 --output-dir ./output --evaluate --visualize
+python src/train.py --games 100 --iterations 10 --epochs 10 --batch-size 128 --temperature 1.0 --output-dir ./output/models --evaluate --visualize
 ```
 
 主なオプション：
@@ -91,10 +99,8 @@ tensorboard --logdir=./logs
 
 ### モデルのエクスポート
 
-学習したモデルをTensorFlow.js形式にエクスポートします：
-
 ```bash
-python export_tfjs.py --model-path ./output/final_model/reversi_model --output-path ./export
+python src/export_tfjs.py --model-path ./output/models/<training_timestamp>/final_model/reversi_model --output-path ./output/export
 ```
 
 オプション：
@@ -130,7 +136,7 @@ python export_tfjs.py --model-path ./output/final_model/reversi_model --output-p
 学習済みモデルを評価して強さを確認できます：
 
 ```bash
-python train.py --evaluate --visualize --log-dir=./logs/evaluation
+python train.py --evaluate --visualize --log-dir=./output/logs/evaluation
 ```
 
 この評価機能では以下が行われます：
