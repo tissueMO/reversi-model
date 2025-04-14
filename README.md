@@ -64,7 +64,7 @@ pip install -r requirements.txt
 ### モデルの学習
 
 ```bash
-python src/train.py --games 100 --iterations 10 --epochs 10 --batch-size 128 --temperature 1.0 --output-dir ./output/models --evaluate --visualize
+python -m src.train --games 100 --iterations 10 --epochs 10 --batch-size 128 --temperature 1.0 --output-dir ./output/models --evaluate --visualize
 ```
 
 主なオプション：
@@ -112,7 +112,7 @@ tensorboard --logdir=./output/logs
 ### モデルのエクスポート
 
 ```bash
-python src/export.py --model-path ./output/models/<training_timestamp>/final_model/reversi_model --output-path ./output/export
+python -m src.export --model-path ./output/models/<training_timestamp>/final_model/reversi_model --output-path ./output/export
 ```
 
 オプション：
@@ -158,7 +158,7 @@ python src/export.py --model-path ./output/models/<training_timestamp>/final_mod
 学習済みモデルを評価して強さを確認できます：
 
 ```bash
-python src/train.py --load-model ./output/models/<training_timestamp>/final_model/reversi_model --evaluate --visualize --log-dir=./output/logs/evaluation
+python -m src.train --load-model ./output/models/<training_timestamp>/final_model/reversi_model --evaluate --visualize --log-dir=./output/logs/evaluation
 ```
 
 この評価機能では以下が行われます：
