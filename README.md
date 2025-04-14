@@ -74,16 +74,21 @@ python src/train.py --games 100 --iterations 10 --epochs 10 --batch-size 128 --t
 - `--batch-size`: バッチサイズ
 - `--temperature`: 探索の温度パラメータ（高いほど多様な手を試す）
 - `--output-dir`: モデルと学習グラフの保存先
-- `--log-dir`: TensorBoardログの保存先（デフォルト: ./logs）
+- `--log-dir`: TensorBoardログの保存先（デフォルト: ./output/logs）
 - `--evaluate`: トレーニング後にモデル強度を評価するフラグ
 - `--visualize`: 評価中のゲーム状態を可視化するフラグ
+- `--save-interim`: 中間モデルを保存するフラグ（デフォルトでは最終モデルのみ保存）
+- `--load-model`: 学習を再開する既存モデルのパス
+- `--start-iteration`: 学習を再開する場合の開始イテレーション番号
+- `--memory-growth`: GPU メモリの動的確保を有効にする（OOM対策）
+- `--memory-log-interval`: メモリ使用状況をログに記録する間隔
 
 ### TensorBoardによる学習状況の可視化
 
 学習中または学習後に以下のコマンドでTensorBoardを起動できます：
 
 ```bash
-tensorboard --logdir=./logs
+tensorboard --logdir=./output/logs
 ```
 
 ブラウザで http://localhost:6006 にアクセスして以下の情報を確認できます：
@@ -129,32 +134,44 @@ python src/export.py --model-path ./output/models/<training_timestamp>/final_mod
 
 ### 出力仕様
 モデルの出力は以下の2つです：
-1. **次に置くべき座標**: `{ row: number, col: number }` 形式、有効な手がない場合は `null`
-2. **予想勝率**: 0〜1の値で現在の盤面からの勝率を示す
+1. **政策ヘッド**: 次の一手の確率分布（64マス+パス=65次元のsoftmax出力）
+2. **価値ヘッド**: 現在の盤面からの勝率予測（-1〜1のtanh出力）
 
 ### モデル構造
 - 入力層: 8x8x3 (盤面の3チャンネル表現)
-- 畳み込み層: 複数の畳み込み層とバッチ正規化
-- 政策ヘッド: 次の一手の確率分布（64マス+パス=65次元）
-- 価値ヘッド: 現在の盤面からの勝率予測（-1〜1）
+- 畳み込み層: 
+  - Conv2D(64, 3x3, padding='same', ReLU) + BatchNormalization
+  - Conv2D(64, 3x3, padding='same', ReLU) + BatchNormalization
+  - Conv2D(128, 3x3, padding='same', ReLU) + BatchNormalization
+- 特徴抽出:
+  - Flatten
+  - Dense(256, ReLU) + BatchNormalization + Dropout(0.3)
+- 政策ヘッド: 
+  - Dense(128, ReLU)
+  - Dense(65, softmax)
+- 価値ヘッド: 
+  - Dense(128, ReLU)
+  - Dense(1, tanh)
 
 ## モデル評価と強さの可視化
 
 学習済みモデルを評価して強さを確認できます：
 
 ```bash
-python train.py --evaluate --visualize --log-dir=./output/logs/evaluation
+python src/train.py --load-model ./output/models/<training_timestamp>/final_model/reversi_model --evaluate --visualize --log-dir=./output/logs/evaluation
 ```
 
 この評価機能では以下が行われます：
-- ランダムプレイヤーとの対戦による勝率の測定
-- モデル間の対戦による相対的な強さの比較
-- TensorBoardでの対局結果と盤面状態の可視化
+- ロジックベースのAI（または別のモデル）との対戦による勝率測定
+- TensorBoardでの対局結果と盤面状態の可視化（手番の順序も表示）
+- 状態評価に基づく強さの分析
 
 評価結果は以下の指標で確認できます：
 - 勝率 (%)
 - 引き分け率 (%)
-- 平均獲得石数
+- 敗北率 (%)
+
+評価中のボード状態は、TensorBoardのIMAGESタブで手番の順序を含めた形で可視化されます。各石の上に表示される数字は、何手目にその位置に石が置かれたかを示しています。
 
 ## フロントエンドでの使用例
 
@@ -186,6 +203,36 @@ async function predictMove(board, player, validMoves) {
   return { move: bestMove, winRate: winRate };
 }
 ```
+
+## Docker環境
+
+リバーシAIの学習とモデル検証はGPUを活用するDockerコンテナ内で実行されます。
+
+### Docker環境の起動
+
+```bash
+docker-compose up -d
+```
+
+コンテナにアタッチするには：
+
+```bash
+docker exec -it reversi-model bash
+```
+
+### GPUサポート
+
+このプロジェクトはNVIDIA GPUに対応しています。docker-compose.yml内でGPUリソースが設定されているため、適切なドライバがインストールされていれば自動的に検出・使用されます。
+
+### TensorBoardの使用
+
+Docker内でTensorBoardがポート6006で起動し、ホストマシンからアクセス可能です：
+
+```
+http://localhost:6006
+```
+
+これにより学習の進捗をリアルタイムで確認できます。
 
 ## ライセンス
 
