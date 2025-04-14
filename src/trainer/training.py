@@ -93,8 +93,9 @@ class TrainingManager(BaseTrainer):
             callbacks=[tensorboard_callback, early_stopping]
         )
 
-        # 学習の履歴を保存
-        for i in range(epochs):
+        # 学習の履歴を保存（早期停止に対応）
+        actual_epochs = len(history.history['loss'])
+        for i in range(actual_epochs):
             self.policy_losses.append(history.history['policy_loss'][i])
             self.value_losses.append(history.history['value_loss'][i])
             self.total_losses.append(history.history['loss'][i])
