@@ -73,16 +73,6 @@ class TrainingManager(BaseTrainer):
             update_freq='epoch'
         )
 
-        # 早期停止用のコールバックを作成
-        early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor='loss',
-            min_delta=0.001,
-            patience=3,
-            verbose=1,
-            mode='min',
-            restore_best_weights=True
-        )
-
         # モデルの訓練
         history = self.model.model.fit(
             inputs,
@@ -90,7 +80,7 @@ class TrainingManager(BaseTrainer):
             batch_size=batch_size,
             epochs=epochs,
             verbose=0,
-            callbacks=[tensorboard_callback, early_stopping]
+            callbacks=[tensorboard_callback]
         )
 
         # 学習の履歴を保存（早期停止に対応）

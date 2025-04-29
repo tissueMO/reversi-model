@@ -77,7 +77,6 @@ python -m src.train --games 100 --iterations 10 --epochs 10 --batch-size 128 --t
 - `--log-dir`: TensorBoardログの保存先（デフォルト: ./output/logs）
 - `--evaluate`: トレーニング後にモデル強度を評価するフラグ
 - `--visualize`: 評価中のゲーム状態を可視化するフラグ
-- `--save-interim`: 中間モデルを保存するフラグ（デフォルトでは最終モデルのみ保存）
 - `--load-model`: 学習を再開する既存モデルのパス
 - `--start-iteration`: 学習を再開する場合の開始イテレーション番号
 - `--memory-growth`: GPU メモリの動的確保を有効にする（OOM対策）

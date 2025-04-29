@@ -10,6 +10,7 @@ from src.game import ReversiEnv
 from src.model import ReversiModel
 from src.trainer import ReversiTrainer
 
+
 def main():
     parser = argparse.ArgumentParser(description='自己対戦によるリバーシAIモデルの学習')
     parser.add_argument('--games', type=int, default=100, help='自己対戦するゲーム数')
@@ -30,8 +31,6 @@ def main():
                         help='学習後にモデルの強さを評価する')
     parser.add_argument('--visualize', action='store_true',
                         help='評価中のボード状態を可視化する')
-    parser.add_argument('--save-interim', action='store_true',
-                        help='中間モデルを保存するかどうか（デフォルトは保存しない）')
     parser.add_argument('--load-model', type=str, help='学習を再開する既存モデルのパス')
     parser.add_argument('--start-iteration', type=int,
                         default=0, help='学習を再開する場合の開始イテレーション番号')
@@ -97,17 +96,13 @@ def main():
         print(
             f"損失 - ポリシー: {losses['policy_loss']:.4f}, 価値: {losses['value_loss']:.4f}, 合計: {losses['total_loss']:.4f}")
 
-        # 中間モデルを保存するオプションが指定されている場合のみ中間モデルを保存
-        if args.save_interim:
-            trainer.save_model(path=os.path.join(
-                output_dir, f"model_iter_{i+1}"))
+        # 中間モデルを保存
+        trainer.save_model(path=os.path.join(
+            output_dir, f"model_iter_{i+1}"))
 
     # 最終モデルを保存
     trainer.save_model(path=os.path.join(output_dir, "final_model"))
-
-    # もし中間モデルを保存していた場合は削除
-    if args.save_interim:
-        trainer.remove_interim_models(output_dir)
+    trainer.remove_interim_models(output_dir)
 
     # モデルの評価
     if args.evaluate:
@@ -118,8 +113,7 @@ def main():
               f"負け: {evaluation_results['losses']}回, 勝率: {evaluation_results['win_rate']:.2%}")
 
     print(f"\n学習が完了しました。モデルが {output_dir}/final_model に保存されました")
-    if args.save_interim:
-        print("すべての中間モデルは削除されました")
+    print("すべての中間モデルは削除されました")
     print(f"TensorBoardログは {trainer.log_dir} に保存されました")
     print(f"学習の進捗をTensorBoardで確認するには: tensorboard --logdir={args.log_dir}")
     print("その後、ブラウザで http://localhost:6006 を開いてください")
